@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import cgi
 import csv
 import json
 import mimetypes
@@ -454,19 +453,34 @@ class Handler(SimpleHTTPRequestHandler):
             self.write_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"ok": False, "error": str(exc)})
 
     def read_uploaded_files(self) -> list[Any]:
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={
-                "REQUEST_METHOD": "POST",
-                "CONTENT_TYPE": self.headers.get("Content-Type", ""),
-                "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
-            },
-        )
-        fields = form["files"] if "files" in form else []
-        if not isinstance(fields, list):
-            fields = [fields]
-        return [field for field in fields if getattr(field, "filename", "")]
+        from multipart import create_form_parser
+
+        files: list[Any] = []
+
+        def on_file(f: Any) -> None:
+            f.file_object.seek(0)
+            files.append(f)
+
+        headers = {k.lower(): v.encode() if isinstance(v, str) else v for k, v in self.headers.items()}
+        parser = create_form_parser(headers, None, on_file)
+        content_length = int(self.headers.get("Content-Length", "0"))
+        parser.write(self.rfile.read(content_length))
+        parser.finalize()
+
+        result = []
+        for f in files:
+            raw_name = f.file_name
+            if not raw_name:
+                continue
+            filename = raw_name.decode() if isinstance(raw_name, bytes) else raw_name
+
+            class _Wrap:
+                def __init__(self, name: str, fo: Any) -> None:
+                    self.filename = name
+                    self.file = fo
+
+            result.append(_Wrap(filename, f.file_object))
+        return result
 
     def write_json(self, status: HTTPStatus, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
