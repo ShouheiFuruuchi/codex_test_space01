@@ -3,13 +3,16 @@ __pycache__/
 .scan_tmp/
 
 # Local business data / generated outputs
-OUTPUT/
-商品マスタ/
-社販表サンプル/
-サンプルデータファイル/
+OUTPUT/*
+!OUTPUT/.gitkeep
+商品マスタ/*
+!商品マスタ/.gitkeep
+社販表サンプル/*
+!社販表サンプル/.gitkeep
+サンプルデータファイル/*
+!サンプルデータファイル/.gitkeep
 
 # Local environment
 .venv/
 venv/
 .env
-
