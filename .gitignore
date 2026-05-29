@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.scan_tmp/
+
+# Local business data / generated outputs
+OUTPUT/
+商品マスタ/
+社販表サンプル/
+サンプルデータファイル/
+
+# Local environment
+.venv/
+venv/
+.env
+
